@@ -1,66 +1,52 @@
 <!DOCTYPE html>
-<!-- Сообщаем браузеру, что используем стандарт HTML5 -->
 <html lang="ru">
 <head>
-    <!-- Установка кодировки для поддержки кириллицы -->
     <meta charset="UTF-8">
-    <!-- Настройка вьюпорта для корректного отображения на мобильных устройствах -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GitHub Spy — Практическая работа №8</title>
-    <!-- Подключение файла со стилями -->
+    <title>GitHub Spy — PR-08</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- Контейнер для центрирования всего содержимого приложения -->
-    <div class="container">
-        <header class="app-header">
-            <!-- Главный заголовок согласно визуальному макету -->
-            <h1>GitHub Spy — Поиск разработчиков</h1>
-        </header>
 
-        <!-- Секция поиска с формой и списком подсказок -->
-        <section class="section search-section">
-            <form id="search-form" autocomplete="off">
-                <div class="input-wrapper">
-                    <!-- maxlength="39" — лимит символов логина GitHub для валидации -->
-                    <input type="text" id="username" placeholder="Введите GitHub username" required maxlength="39">
-                    <!-- Контейнер для выпадающих подсказок автокомплита (Бонусное задание) -->
+    <header class="app-header">
+        <h1>GitHub Spy</h1>
+        <p>Практическая работа №8: Fetch & API</p>
+    </header>
+
+    <main class="container">
+        <section class="search-section section">
+            <form id="search-form">
+                <div class="input-group">
+                    <input type="text" id="username" placeholder="Введите GitHub username" maxlength="39" autocomplete="off">
                     <div id="autocomplete-list" class="autocomplete-items"></div>
                 </div>
-                <!-- Кнопка поиска зеленого цвета (стиль GitHub) -->
                 <button type="submit" id="searchBtn">Найти</button>
             </form>
-            <!-- Блок для вывода сообщений об ошибках (скрыт по умолчанию) -->
+            <div id="loader" class="loader hidden">Загрузка данных...</div>
             <div id="error" class="error hidden"></div>
         </section>
 
-        <!-- Loader: индикатор загрузки, обязательный для проверки QuickCheck -->
-        <div id="loader" class="loader hidden">Загрузка данных...</div>
-
-        <!-- Контейнер для вывода карточки профиля пользователя -->
         <section id="profile-section" class="section hidden">
-            <div id="profile" class="profile-card"></div>
+            <div id="profile"></div>
         </section>
 
-        <!-- Секция списка репозиториев -->
         <section id="repos-section" class="section hidden">
             <h2>Последние репозитории</h2>
-            <!-- Список для динамического наполнения репозиториями -->
             <ul id="repos" class="repo-list"></ul>
-            <!-- Контейнер для кнопок пагинации (зеленые квадраты) -->
             <div id="pagination" class="pagination"></div>
         </section>
 
-        <!-- Секция истории поиска -->
         <section id="history-section" class="section hidden">
             <h3>История поиска</h3>
-            <!-- Контейнер для отрисовки синих овальных тегов -->
             <div id="history" class="history-tags"></div>
-            <!-- Кнопка очистки: по ТЗ должна быть красного цвета -->
             <button id="clearHistory" class="btn-clear">Очистить историю</button>
         </section>
-    </div>
-    <!-- Подключение файла с логикой приложения -->
+    </main>
+
+    <footer class="app-footer">
+        <p>GitHub Spy © 2026 — Учебный проект по JavaScript</p>
+    </footer>
+
     <script src="script.js"></script>
 </body>
 </html>
