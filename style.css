@@ -1,152 +1,72 @@
-css
-/* Базовые стили */
+/* Базовые настройки шрифтов и фона страницы */
 body {
-    font-family: Arial, sans-serif; /* Установка основного шрифта страницы без засечек */
-    margin: 0; /* Обнуление внешних отступов у тела документа */
-    padding: 0; /* Обнуление внутренних отступов у тела документа */
-    background: #f0f2f5; /* Светло-серый цвет фона всей страницы */
-    color: #222; /* Основной цвет текста — почти черный */
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background-color: #f6f8fa; /* Светло-серый фон GitHub */
+    margin: 0; padding: 20px; color: #24292f;
 }
 
-.header, .footer {
-    background: #24292e; /* Темный фон (цвет GitHub) для шапки и подвала */
-    color: white; /* Белый цвет текста для контраста на темном фоне */
-    text-align: center; /* Выравнивание текста по центру */
-    padding: 1rem; /* Внутренние отступы со всех сторон */
-}
+/* Ограничение ширины центрального блока */
+.container { max-width: 800px; margin: 0 auto; }
+.app-header { text-align: center; margin-bottom: 25px; }
 
-.main-content {
-    max-width: 700px; /* Ограничение максимальной ширины контента */
-    margin: 2rem auto; /* Центрирование блока по горизонтали и отступ сверху/снизу */
-    padding: 0 1rem; /* Боковые внутренние отступы для мобильных устройств */
-}
-
+/* Белые карточки секций с серой рамкой согласно ТЗ */
 .section {
-    background: white; /* Белый фон для каждой информационной секции */
-    padding: 1rem 1.5rem; /* Внутренние отступы для текста внутри секций */
-    margin-bottom: 1.5rem; /* Расстояние между соседними секциями */
-    border-radius: 6px; /* Закругление углов блоков */
-    box-shadow: 0 0 8px rgba(0,0,0,0.1); /* Легкая тень для эффекта приподнятости */
+    background: #fff; border: 1px solid #d0d7de;
+    border-radius: 6px; padding: 24px; margin-bottom: 20px;
 }
 
-form {
-    display: flex; /* Использование Flexbox для выравнивания инпута и кнопки в ряд */
-    gap: 0.5rem; /* Расстояние между инпутом и кнопкой */
-}
+/* Класс для скрытия элементов интерфейса */
+.hidden { display: none !important; }
 
+/* Стилизация формы и поля ввода */
+form { display: flex; gap: 10px; }
+.input-wrapper { position: relative; flex: 1; }
 input {
-    flex: 1; /* Инпут занимает всё доступное пространство в строке */
-    padding: 0.5rem; /* Внутренний отступ текста в поле ввода */
-    font-size: 1rem; /* Размер шрифта вводимого текста */
-    border: 1px solid #ccc; /* Тонкая серая рамка вокруг поля */
-    border-radius: 4px; /* Закругление углов поля ввода */
+    width: 100%; padding: 8px 12px; border: 1px solid #d0d7de;
+    border-radius: 6px; font-size: 16px;
 }
 
-button {
-    padding: 0.5rem 1rem; /* Внутренние отступы кнопки */
-    background: #2ea44f; /* Зеленый цвет фона кнопки (в стиле GitHub) */
-    border: none; /* Удаление стандартной системной рамки кнопки */
-    color: white; /* Белый цвет текста на кнопке */
-    font-weight: bold; /* Жирное начертание текста */
-    border-radius: 4px; /* Закругление углов кнопки */
-    cursor: pointer; /* Смена курсора на "палец" при наведении */
-    transition: background-color 0.3s; /* Плавный переход цвета при наведении */
+/* Стили выпадающего списка автокомплита */
+.autocomplete-items {
+    position: absolute; border: 1px solid #d0d7de; border-top: none;
+    z-index: 99; top: 100%; left: 0; right: 0; background: #fff;
+    border-radius: 0 0 6px 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+.autocomplete-items div { padding: 10px; cursor: pointer; }
+.autocomplete-items div:hover { background-color: #f3f4f6; }
+
+/* Зеленая кнопка поиска */
+#searchBtn {
+    background-color: #2da44e; color: #fff; border: 1px solid rgba(27,31,36,0.15);
+    border-radius: 6px; padding: 8px 16px; font-weight: 600; cursor: pointer;
+}
+#searchBtn:disabled { background-color: #94d3a2; cursor: not-allowed; }
+
+/* Пагинация: зеленые кнопки-квадраты согласно макету */
+.pagination { display: flex; gap: 4px; justify-content: center; margin-top: 20px; }
+.page-btn {
+    padding: 5px 10px; background: #2da44e; color: #fff;
+    border: none; border-radius: 3px; cursor: pointer; font-size: 12px;
+}
+.page-btn.active { background: #1a7f37; font-weight: bold; }
+
+/* История: синие овальные кнопки (Page 3 PDF) */
+.history-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 15px; }
+.history-tag-btn {
+    background-color: #ddf4ff; color: #0969da; border: none;
+    padding: 5px 14px; border-radius: 20px; cursor: pointer; font-size: 14px;
 }
 
-button:disabled {
-    background: #94d3a2; /* Светло-зеленый фон для заблокированной кнопки */
-    cursor: not-allowed; /* Курсор "запрета" при наведении на неактивную кнопку */
-}
-
-button:hover:not(:disabled) {
-    background: #22863a; /* Более темный оттенок зеленого при наведении на активную кнопку */
-}
-
-.error {
-    color: #d73a49; /* Красный цвет для текста ошибок */
-    margin-top: 0.5rem; /* Отступ текста ошибки от формы поиска */
-}
-
-.hidden {
-    display: none; /* Полное скрытие элемента со страницы */
-}
-
-/* Профиль */
-.profile-card {
-    display: flex; /* Выстраивание аватара и текста в ряд */
-    gap: 1rem; /* Промежуток между аватаром и текстом */
-    align-items: center; /* Центрирование элементов по вертикали */
-}
-
-.profile-card img {
-    width: 80px; /* Фиксированная ширина аватара */
-    height: 80px; /* Фиксированная высота аватара */
-    border-radius: 50%; /* Превращение квадратного фото в круг */
-}
-
-.profile-info h2 {
-    margin: 0 0 0.3rem 0; /* Обнуление верхнего отступа и настройка нижнего у заголовка */
-}
-
-.profile-info p {
-    margin: 0.2rem 0; /* Настройка вертикальных отступов для текста описания */
-    color: #555; /* Тёмно-серый цвет для второстепенного текста */
-}
-
-/* Репозитории */
-.repo-list {
-    list-style: none; /* Удаление стандартных маркеров (точек) списка */
-    padding-left: 0; /* Удаление стандартного левого отступа списка */
-}
-
-.repo-list li {
-    padding: 0.5rem 0; /* Отступы сверху и снизу для каждого элемента списка */
-    border-bottom: 1px solid #eee; /* Светлая разделительная линия между репозиториями */
-}
-
-.repo-list li a {
-    color: #0366d6; /* Синий цвет для ссылок на репозитории */
-    font-weight: bold; /* Жирное начертание названия репозитория */
-    text-decoration: none; /* Удаление стандартного подчеркивания ссылки */
-}
-
-.repo-list li a:hover {
-    text-decoration: underline; /* Появление подчеркивания при наведении курсора */
-}
-
-/* История */
-.history-tags {
-    display: flex; /* Выстраивание тегов поиска в ряд */
-    gap: 0.5rem; /* Зазор между кнопками-тегами */
-    flex-wrap: wrap; /* Перенос тегов на новую строку, если они не помещаются */
-}
-
-.history-tags button {
-    background: #e1e4e8; /* Светло-серый фон для кнопок истории */
-    color: #0366d6; /* Синий цвет текста логинов в истории */
-    border: none; /* Удаление рамки */
-    border-radius: 3px; /* Малое закругление углов тега */
-    padding: 0.3rem 0.6rem; /* Компактные внутренние отступы для тега */
-    cursor: pointer; /* Указатель при наведении */
-    font-size: 0.9rem; /* Уменьшенный размер шрифта для тегов */
-}
-
-.history-tags button:hover {
-    background: #d1d5da; /* Затемнение фона тега при наведении */
-}
-
+/* Красная кнопка очистки согласно вашему требованию */
 .btn-clear {
-    margin-top: 0.5rem; /* Отступ кнопки очистки от тегов истории */
-    background: #d73a49; /* Красный цвет фона для кнопки удаления */
+    background-color: #cf222e; color: #fff; border: none;
+    padding: 10px 16px; border-radius: 6px; cursor: pointer; width: 100%;
 }
+.btn-clear:hover { background-color: #a40e26; }
 
-.btn-clear:hover {
-    background: #b31d28; /* Темно-красный цвет при наведении на очистку */
-}
-
-/* Loader */
-.loader {
-    text-align: center; /* Центрирование текста загрузки */
-    font-weight: bold; /* Жирный шрифт для привлечения внимания */
-    font-size: 1.2rem; /* Увеличенный размер шрифта для читаемости */
-}
+/* Репозитории и иконки */
+.repo-item { padding: 12px 0; border-top: 1px solid #d0d7de; }
+.repo-item a { color: #0969da; text-decoration: none; font-weight: 600; font-size: 18px; }
+.star-icon { color: #e3b341; margin-right: 4px; }
+.loader { text-align: center; color: #0969da; font-weight: bold; padding: 20px; }
+.error { background: #ffebe9; color: #cf222e; border: 1px solid rgba(255,129,130,0.4); padding: 15px; border-radius: 6px; }

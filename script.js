@@ -1,180 +1,218 @@
-"use strict"; // Включает строгий режим для предотвращения распространенных ошибок и использования современных стандартов JS
+"use strict"; // Включаем строгий режим для предотвращения ошибок
 
-// TODO: Получить ссылки на DOM-элементы
-const searchForm = document.getElementById("search-form"); // Ссылка на форму для перехвата события отправки (submit)
-const usernameInput = document.getElementById("username"); // Ссылка на поле ввода, где пользователь пишет логин
-const searchBtn = document.getElementById("searchBtn"); // Ссылка на кнопку поиска для управления её состоянием (активна/неактивна)
-const errorDiv = document.getElementById("error"); // Ссылка на блок, в который будут выводиться сообщения об ошибках
-const loader = document.getElementById("loader"); // Ссылка на индикатор загрузки для управления его видимостью
-const profileSection = document.getElementById("profile-section"); // Ссылка на контейнер секции профиля
-const profileDiv = document.getElementById("profile"); // Ссылка на конкретный блок внутри профиля для отрисовки карточки
-const reposSection = document.getElementById("repos-section"); // Ссылка на контейнер секции репозиториев
-const reposList = document.getElementById("repos"); // Ссылка на элемент списка <ul> для добавления проектов
-const historySection = document.getElementById("history-section"); // Ссылка на секцию истории поиска
-const historyDiv = document.getElementById("history"); // Ссылка на контейнер, где будут создаваться кнопки-теги
-const clearHistoryBtn = document.getElementById("clearHistory"); // Ссылка на кнопку для полной очистки истории из памяти
+/**
+ * Инициализация ссылок на DOM-элементы
+ */
+const searchBtn = document.getElementById('searchBtn'); // Кнопка Найти
+const usernameInput = document.getElementById('username'); // Поле ввода
+const loader = document.getElementById('loader'); // Элемент лоадера
+const errorDiv = document.getElementById('error'); // Блок вывода ошибок
+const profileDiv = document.getElementById('profile'); // Контейнер профиля
+const reposList = document.getElementById('repos'); // Список репозиториев
+const paginationDiv = document.getElementById('pagination'); // Блок страниц
+const autocompleteList = document.getElementById('autocomplete-list'); // Список подсказок
 
-// TODO: Функция для получения данных профиля пользователя
-async function getUser(username) {
-  // ПОЧЕМУ async/await? — Позволяет писать асинхронный код как синхронный, проще читать и понимать последовательность действий.
-  // ПОЧЕМУ try/catch? — Для обработки ошибок сети (например, пропал интернет) и исключений, которые нельзя поймать иначе.
-  // ПОЧЕМУ проверяем response.ok? — fetch не выбрасывает ошибку при статусе 404 (не найден), поэтому статус нужно проверять вручную.
-  const response = await fetch(`https://github.com{username}`); // Выполняем сетевой запрос к API GitHub для получения данных юзера
-  if (!response.ok) {
-    // Если ответ от сервера не успешный (статус не 200-299)
-    if (response.status === 404) throw new Error("Пользователь не найден"); // Если код 404, генерируем понятную ошибку
-    throw new Error("Ошибка при загрузке профиля"); // Для других кодов ошибок генерируем общее сообщение
-  }
-  return await response.json(); // Декодируем ответ из формата JSON в объект JavaScript
-}
+// Переменные состояния приложения
+let currentPage = 1; // Текущая активная страница
+const reposPerPage = 5; // Лимит репозиториев на страницу 
 
-// TODO: Функция для получения репозиториев пользователя
-async function getRepos(username) {
-  // Аналогично getUser, fetch репозиториев
-  const response = await fetch(
-    `https://github.com{username}/repos?sort=updated&per_page=5`,
-  ); // Запрашиваем 5 последних обновленных проектов
-  if (!response.ok) throw new Error("Не удалось загрузить репозитории"); // Если запрос провалился, генерируем исключение
-  return await response.json(); // Возвращаем массив объектов репозиториев
-}
+/**
+ * Автокомплит: показывает варианты из истории поиска при наборе текста
+ */
+usernameInput.addEventListener('input', function() {
+    const val = this.value.trim(); // Получаем значение без пробелов
+    autocompleteList.innerHTML = ""; // Очищаем список подсказок
+    if (!val) return;
 
-// TODO: Функция для отображения профиля
-function renderProfile(data) {
-  // Создайте элементы через createElement, вставьте данные через textContent
-  // Не используйте innerHTML для данных от API! (Это критически важно для защиты от XSS-уязвимостей)
-  profileDiv.innerHTML = ""; // Очищаем контейнер от результатов предыдущего поиска
+    const history = JSON.parse(localStorage.getItem('gh_spy_history') || "[]"); // Берем историю из памяти
+    const matches = history.filter(name => name.toLowerCase().startsWith(val.toLowerCase())); // Ищем совпадения
 
-  const avatar = document.createElement("img"); // Создаем новый элемент изображения
-  avatar.src = data.avatar_url; // Указываем путь к картинке аватара
-  avatar.alt = data.login; // Устанавливаем альтернативный текст для доступности
-
-  const info = document.createElement("div"); // Создаем контейнер для текстовой информации
-  info.className = "profile-info"; // Присваиваем класс для правильного отображения стилей из CSS
-
-  const name = document.createElement("h2"); // Создаем заголовок для имени пользователя
-  name.textContent = data.name || data.login; // Отображаем полное имя, а если его нет — логин (через безопасный textContent)
-
-  const bio = document.createElement("p"); // Создаем абзац для описания (био) профиля
-  bio.textContent = data.bio || "У этого пользователя нет описания профиля"; // Пишем био или текст-заглушку
-
-  info.append(name, bio); // Вкладываем имя и описание в текстовый блок
-  profileDiv.append(avatar, info); // Вкладываем аватар и текст в основную карточку профиля
-  profileSection.classList.remove("hidden"); // Удаляем класс hidden, чтобы секция стала видимой
-}
-
-// TODO: Функция для отображения репозиториев
-function renderRepos(repos) {
-  // Создайте список li с ссылками и описаниями
-  reposList.innerHTML = ""; // Полностью очищаем старый список проектов
-  repos.forEach((repo) => {
-    // Проходимся циклом по каждому репозиторию из массива
-    const li = document.createElement("li"); // Создаем элемент списка (строку)
-    const a = document.createElement("a"); // Создаем элемент ссылки
-    a.href = repo.html_url; // Устанавливаем адрес ссылки на страницу проекта в GitHub
-    a.target = "_blank"; // Настраиваем открытие ссылки в новой вкладке браузера
-    a.textContent = repo.name; // Указываем название репозитория как текст ссылки
-    li.append(a); // Помещаем ссылку внутрь элемента списка
-    reposList.append(li); // Добавляем готовый элемент в общий список на странице
-  });
-  reposSection.classList.remove("hidden"); // Показываем секцию с заголовком "Последние репозитории"
-}
-
-// TODO: Функция для отображения ошибок
-function showError(message) {
-  errorDiv.textContent = message; // Записываем текст ошибки в блок
-  errorDiv.classList.remove("hidden"); // Убираем класс скрытия, чтобы пользователь увидел ошибку
-}
-
-// TODO: Функция для очистки ошибок
-function clearError() {
-  errorDiv.textContent = ""; // Стираем текст ошибки
-  errorDiv.classList.add("hidden"); // Добавляем класс скрытия обратно
-}
-
-// TODO: Функция для управления loader
-function showLoader() {
-  loader.classList.remove("hidden"); // Показываем индикатор загрузки на экране
-}
-function hideLoader() {
-  loader.classList.add("hidden"); // Скрываем индикатор загрузки с экрана
-}
-
-// TODO: Обработчик формы поиска
-searchForm.addEventListener("submit", async (e) => {
-  e.preventDefault(); // Останавливаем стандартную перезагрузку страницы при отправке формы
-  clearError(); // Сбрасываем старые ошибки перед началом нового поиска
-  profileSection.classList.add("hidden"); // Скрываем старые данные профиля
-  reposSection.classList.add("hidden"); // Скрываем старые данные репозиториев
-
-  const username = usernameInput.value.trim(); // Считываем имя из инпута и удаляем лишние пробелы по краям
-  if (!username) {
-    // Если пользователь нажал "Найти" при пустом поле
-    showError("Введите имя пользователя GitHub"); // Выводим предупреждение
-    return; // Завершаем выполнение функции
-  }
-
-  searchBtn.disabled = true; // Выключаем кнопку поиска на время выполнения запросов
-  showLoader(); // Включаем индикатор загрузки
-
-  // TODO: Вызвать getUser и getRepos, отрисовать данные, обработать ошибки
-  try {
-    // ПОЧЕМУ Promise.all? — Мы запускаем запросы профиля и репозиториев одновременно, что ускоряет работу приложения.
-    const [userData, reposData] = await Promise.all([
-      getUser(username),
-      getRepos(username),
-    ]);
-    renderProfile(userData); // Если оба запроса успешны, отрисовываем карточку профиля
-    renderRepos(reposData); // Отрисовываем список последних 5 проектов
-    saveToHistory(username); // Добавляем успешно найденное имя в историю поиска
-  } catch (err) {
-    // Если на любом этапе возникла ошибка (404 или нет сети)
-    showError(err.message); // Показываем пользователю понятное сообщение об ошибке
-  } finally {
-    // Этот блок выполнится всегда: и при успехе, и при ошибке
-    hideLoader(); // В любом случае выключаем лоадер
-    searchBtn.disabled = false; // В любом случае возвращаем кнопку поиска в активное состояние
-  }
+    matches.forEach(name => {
+        const div = document.createElement('div'); // Создаем элемент подсказки
+        div.textContent = name;
+        div.onclick = () => {
+            usernameInput.value = name; // Подставляем имя при клике
+            autocompleteList.innerHTML = ""; // Скрываем список
+            handleSearch(); // Запускаем поиск
+        };
+        autocompleteList.appendChild(div); // Добавляем в выпадающий список
+    });
 });
 
-// TODO: Функции для работы с историей поиска в localStorage
-function saveToHistory(username) {
-  let history = JSON.parse(localStorage.getItem("gh_history")) || []; // Извлекаем историю из памяти или создаем пустой массив
-  if (!history.includes(username)) {
-    // Проверяем, нет ли уже этого имени в истории (избегаем дублей)
-    history.unshift(username); // Добавляем новое имя в самое начало массива
-    history = history.slice(0, 3); // Согласно ТЗ, оставляем только 3 последних поисковых запроса
-    localStorage.setItem("gh_history", JSON.stringify(history)); // Сохраняем массив обратно в localStorage в виде строки
-    renderHistory(); // Перерисовываем блок истории на странице
-  }
+/**
+ * ГЛАВНАЯ ФУНКЦИЯ ЗАПРОСА
+ * ПОЧЕМУ Promise.all? — Позволяет запустить запрос профиля и репозиториев одновременно для скорости.
+ */
+async function fetchData(username, page = 1) {
+    toggleUI(true); // Включаем Loader и блокируем кнопки
+    clearScreen(); // Очищаем экран перед новым выводом
+
+    try {
+        // Запускаем два fetch параллельно
+        const [resUser, resRepos] = await Promise.all([
+            fetch(`https://api.github.com/users/${username}`),
+            fetch(`https://api.github.com/users/${username}/repos?sort=updated&per_page=${reposPerPage}&page=${page}`)
+        ]);
+
+        /**
+         * ПОЧЕМУ !response.ok? — fetch не считает 404 ошибкой, нужно проверять статус вручную.
+         */
+        if (!resUser.ok) {
+            if (resUser.status === 404) throw new Error("Пользователь не найден");
+            throw new Error(`Ошибка GitHub: ${resUser.status}`);
+        }
+
+        const userData = await resUser.json(); // Данные профиля
+        const reposData = await resRepos.json(); // Данные репозиториев
+
+        renderProfile(userData); // Отрисовка карточки
+        renderRepos(reposData, userData.public_repos, username); // Отрисовка списка
+        saveHistory(username); // Сохранение в localStorage
+
+    } catch (err) {
+        /**
+         * ПОЧЕМУ try...catch? — Единственный надежный способ перехватить ошибки сети или API.
+         */
+        showError(err.message);
+    } finally {
+        toggleUI(false); // Всегда выключаем лоадер в конце
+    }
+}
+
+/**
+ * ТАБУ: Используем createElement и textContent вместо innerHTML для защиты от XSS 
+ */
+function renderProfile(user) {
+    profileDiv.innerHTML = ""; // Очистка
+    
+    const avatar = document.createElement('img'); // Создаем аватар
+    avatar.src = user.avatar_url;
+    avatar.style.width = "80px"; avatar.style.borderRadius = "50%";
+
+    const name = document.createElement('h2'); // Создаем заголовок с именем
+    name.textContent = user.name || user.login;
+
+    const bio = document.createElement('p'); // Создаем био
+    bio.textContent = user.bio || "Описание отсутствует";
+
+    profileDiv.append(avatar, name, bio); // Собираем карточку
+    document.getElementById('profile-section').classList.remove('hidden');
+}
+
+/**
+ * Отрисовка репозиториев и звезд 
+ */
+function renderRepos(repos, total, user) {
+    reposList.innerHTML = ""; // Очистка
+    
+    repos.forEach(repo => {
+        const li = document.createElement('li'); // Создаем элемент списка
+        li.className = "repo-item";
+        li.innerHTML = `
+            <a href="${repo.html_url}" target="_blank">${repo.name}</a>
+            <p style="font-size: 14px; color: #57606a;">${repo.description || ""}</p>
+            <div><span class="star-icon">★</span>${repo.stargazers_count}</div>
+        `;
+        reposList.append(li); // Добавляем в <ul>
+    });
+
+    renderPagination(total, user); // Вызов пагинации
+    document.getElementById('repos-section').classList.remove('hidden');
+}
+
+/**
+ * Отрисовка пагинации 
+ */
+function renderPagination(total, user) {
+    paginationDiv.innerHTML = "";
+    const pages = Math.ceil(total / reposPerPage); // Считаем количество страниц
+    if (pages <= 1) return;
+
+    for (let i = 1; i <= Math.min(pages, 10); i++) {
+        const btn = document.createElement('button'); // Создаем кнопку страницы
+        btn.textContent = i;
+        btn.className = `page-btn ${i === currentPage ? 'active' : ''}`;
+        btn.onclick = () => {
+            currentPage = i;
+            fetchData(user, i); // Переход по страницам
+        };
+        paginationDiv.append(btn); // Добавляем кнопку
+    }
+}
+
+/**
+ * Работа с историей (localStorage)
+ */
+function saveHistory(u) {
+    let h = JSON.parse(localStorage.getItem('gh_spy_history') || "[]");
+    if (!h.includes(u)) {
+        h.unshift(u); // Добавляем в начало
+        if (h.length > 3) h.pop(); // Храним только 3 записи 
+        localStorage.setItem('gh_spy_history', JSON.stringify(h)); // Сохраняем в память
+        renderHistory();
+    }
 }
 
 function renderHistory() {
-  const history = JSON.parse(localStorage.getItem("gh_history")) || []; // Получаем список имен из памяти браузера
-  if (history.length === 0) {
-    // Если в истории пока ничего нет
-    historySection.classList.add("hidden"); // Скрываем всю секцию истории
-    return; // Выходим из функции
-  }
-  historyDiv.innerHTML = ""; // Очищаем контейнер от старых кнопок истории
-  history.forEach((user) => {
-    // Для каждого имени в сохраненной истории создаем кнопку
-    const btn = document.createElement("button"); // Создаем элемент кнопки
-    btn.textContent = user; // Устанавливаем логин как текст на кнопке
-    btn.onclick = () => {
-      // Назначаем действие при клике на тег истории
-      usernameInput.value = user; // Подставляем имя из тега в поле ввода
-      searchForm.dispatchEvent(new Event("submit")); // Программно вызываем событие отправки формы (поиск)
-    };
-    historyDiv.append(btn); // Добавляем готовую кнопку-тег в контейнер
-  });
-  historySection.classList.remove("hidden"); // Делаем секцию истории видимой на странице
+    const h = JSON.parse(localStorage.getItem('gh_spy_history') || "[]");
+    const container = document.getElementById('history');
+    container.innerHTML = "";
+    
+    h.forEach(name => {
+        const btn = document.createElement('button'); // Создаем овальный тег
+        btn.className = "history-tag-btn";
+        btn.textContent = name;
+        btn.onclick = () => {
+            usernameInput.value = name;
+            handleSearch();
+        };
+        container.append(btn);
+    });
+    // Скрываем секцию истории, если в памяти пусто
+    document.getElementById('history-section').classList.toggle('hidden', !h.length);
 }
 
-clearHistoryBtn.onclick = () => {
-  // Обработчик для кнопки "Очистить историю"
-  localStorage.removeItem("gh_history"); // Полностью удаляем ключ с историей из памяти браузера
-  renderHistory(); // Снова вызываем отрисовку, которая теперь скроет секцию
+/**
+ * Вспомогательные функции управления экраном
+ */
+function toggleUI(isLoading) {
+    searchBtn.disabled = isLoading; // Блокировка кнопки поиска
+    loader.classList.toggle('hidden', !isLoading);
+}
+
+function clearScreen() {
+    errorDiv.classList.add('hidden'); // Скрываем ошибки
+    document.getElementById('profile-section').classList.add('hidden'); // Скрываем профиль
+    document.getElementById('repos-section').classList.add('hidden'); // Скрываем репозитории
+    autocompleteList.innerHTML = ""; // Скрываем подсказки
+}
+
+function showError(msg) {
+    errorDiv.textContent = msg; // Записываем текст ошибки
+    errorDiv.classList.remove('hidden'); // Показываем блок
+}
+
+function handleSearch() {
+    const user = usernameInput.value.trim();
+    if (user) {
+        currentPage = 1; // Сброс страницы при новом поиске
+        fetchData(user);
+    }
+}
+
+// Слушатель отправки формы (по кнопке или Enter)
+document.getElementById('search-form').onsubmit = (e) => {
+    e.preventDefault();
+    handleSearch();
 };
 
-// TODO: Инициализация приложения — загрузка истории и др.
-renderHistory(); // При самой первой загрузке страницы проверяем, есть ли что-то в истории, и отрисовываем её
+// Исправленная логика кнопки Очистить: удаляет память и очищает экран
+document.getElementById('clearHistory').onclick = () => {
+    localStorage.removeItem('gh_spy_history'); // Полное удаление из localStorage
+    renderHistory(); // Перерисовка блока истории (он скроется)
+    clearScreen(); // Очистка репозиториев и профиля с экрана
+    usernameInput.value = ""; // Очистка поля ввода
+};
+
+// Загрузка истории при первом открытии страницы
+renderHistory();
